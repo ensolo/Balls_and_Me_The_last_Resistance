@@ -77,6 +77,8 @@ class Game(object):
             self.items.append(Immortal((128, 0, 128), 5))
         if type == "rapid_fire":
             self.items.append(RapidFire((128, 0, 128), 5))
+        if type == "freeze":
+            self.items.append(Freeze((128, 0, 128), 10))
 
     def give_highscore(self):
         score_file = open("Highscore.txt", "a+")
@@ -109,13 +111,15 @@ class Game(object):
         if time.timer_enemy > 1400 and not boss1.active and time.timer_boss1_delay > 5000:
             time.timer_enemy = 0
             self.spawn_enemy()
-        if time.timer_item > 20000 and not boss1.active and time.timer_boss1_delay > 5000:
+        if time.timer_item > 15000 and not boss1.active and time.timer_boss1_delay > 5000:
             time.timer_item = 0
-            number = randint(1, 2)
+            number = randint(1, 3)
             if number == 1:
                 self.spawn_item("immortal")
             elif number == 2:
                 self.spawn_item("rapid_fire")
+            elif number == 3:
+                self.spawn_item("freeze")
 
     def delete_objects(self):
         for bullet in self.bullets:
@@ -307,6 +311,7 @@ class Enemy(object):
         self.y = y
         self.radius = radius
         self.speed = speed
+        self.normal_speed = speed
         self.direction = None
         self.lives = lives
 
@@ -592,6 +597,28 @@ class Item(object):
             game.items.remove(self)
         except:
             pass
+
+
+class Freeze(Item):
+    def __init__(self, spirit, duration):
+        Item.__init__(self, spirit, duration, letter="F")
+        self.enemy_speed = 0
+
+    def update(self):
+        if self.use and self.duration <= 0:
+            for enemy in game.enemies:
+                enemy.speed = enemy.normal_speed
+            self.delete()
+        if self.use and self.duration > 0:
+            self.duration -= time.time_passed_seconds
+            for enemy in game.enemies:
+                enemy.speed = self.enemy_speed
+        if not self.use and self.check_pickup():
+            self.use = True
+        if self.despawn <= 0 and not self.use:
+            self.delete()
+        else:
+            self.despawn -= time.time_passed_seconds
 
 
 class Boost(Item):
