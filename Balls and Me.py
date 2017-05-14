@@ -164,7 +164,7 @@ class Player(object):
             if time.timer_boss1_delay > 5000:
                 time.timer_boss1_delay = 0
                 player.bullets = []
-            boss1.spawn(20, 20)
+            boss1.spawn(int(player.boss_spawn / 5), int(player.boss_spawn / 5))
         if boss1.active:
             boss1.fire()
             for part in boss1.parts:
