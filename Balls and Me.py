@@ -840,7 +840,7 @@ orig_me_spirit = pygame.transform.scale(me_spirit_load, (me_radius * 2, me_radiu
 background = pygame.transform.scale(background, (w, h))
 background_start = pygame.transform.scale(background_start, (w, h))
 background_game = pygame.transform.scale(background_game, (w, h))
-cursor_spirit = pygame.transform.scale(cursor_spirit, (40, 40))
+cursor_spirit = pygame.transform.scale(cursor_spirit, (60, 60))
 
 music_background_filename = "music_background.mp3"
 fire_sound_filename = "fire_sound.ogg"
