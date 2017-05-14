@@ -489,12 +489,12 @@ class Menu(object):
                                 if event2.key == K_ESCAPE:
                                     esc_pressed = True
                                     break
-                        if button_exit.check_pressed() and time.timer_mouse > 500:
+                        if button_exit.check_pressed() and time.timer_mouse > 200:
                             exit()
-                        if button_return_to_game.check_pressed() or esc_pressed and time.timer_mouse > 500:
+                        if button_return_to_game.check_pressed() or esc_pressed and time.timer_mouse > 200:
                             time.timer_mouse = 0
                             break
-                        if button_setting.check_pressed() and time.timer_mouse > 500:
+                        if button_setting.check_pressed() and time.timer_mouse > 200:
                             time.timer_mouse = 0
                             self.setting_loop()
                         screen.blit(background, (0, 0))
@@ -514,15 +514,55 @@ class Menu(object):
                     if event.key == K_ESCAPE:
                         esc_pressed = True
                         break
-            if button_return.check_pressed() or esc_pressed and time.timer_mouse > 500:
+            if button_return.check_pressed() or esc_pressed and time.timer_mouse > 200:
                 time.timer_mouse = 0
                 break
             screen.blit(background, (0, 0))
             button_return.draw()
+            switch_difficulty.draw()
             cursor.draw()
             pygame.display.update()
+            switch_difficulty.update()
             time.time_passed = clock.tick(60)
             time.timer_mouse += time.time_passed
+
+
+class Switch(object):
+    def __init__(self, center_x, center_y):
+        self.width = 400
+        self.height = 20
+        self.x_rect = center_x - self.width / 2
+        self.y_rect = center_y - self.height / 2
+        self.x_cir = center_x
+        self.y_cir = center_y
+        self.radius = 20
+        self.spirit_rect = (255, 255, 255)
+        self.spirit_cir = (255, 0, 0)
+        self.use_last_frame = False
+        self.percent = 0
+
+    def draw(self):
+        pygame.draw.rect(screen, self.spirit_rect, (self.x_rect, self.y_rect, self.width, self.height))
+        pygame.draw.circle(screen, self.spirit_cir, (self.x_cir, self.y_cir), self.radius)
+
+    def update(self):
+        if pygame.mouse.get_pressed()[0]:
+            x, y = pygame.mouse.get_pos()
+            if self.use_last_frame:
+                if self.x_rect <= self.x_cir <= int(self.x_rect + self.width):
+                    if self.x_rect <= x <= int(self.x_rect + self.width):
+                        self.x_cir = int(x)
+                elif self.x_rect > self.x_cir:
+                    self.x_cir = int(self.x_rect)
+                else:
+                    self.x_cir = int(self.x_rect + self.width)
+            elif self.x_rect <= x <= int(self.x_rect + self.width) \
+                    and self.y_cir - self.radius <= y <= self.y_cir + self.radius:
+                self.x_cir = x
+                self.use_last_frame = True
+        else:
+            self.use_last_frame = False
+        self.percent = self.x_cir / self.width
 
 
 class Time(object):
@@ -908,6 +948,7 @@ button_exit = Button("Exit", (w - w_button) / 2, h / 2 + 3 * h_button, w_button,
 button_return_to_game = Button("Back to Game", (w - w_button) / 2, h / 2 - 3 * h_button, w_button, h_button, 3)
 button_setting = Button("Settings", (w - w_button) / 2, h / 2 - 0 * h_button, w_button, h_button, 3)
 button_return = Button("Back", (w - w_button) / 2, h / 2 + 3 * h_button, w_button, h_button, 3)
+switch_difficulty = Switch(int(w / 2), int(h / 2))
 start_font = Font(0, 0, 2, (255, 255, 255))
 start_font.make_surface("Press Space to Start the Game")
 score_font = Font(0, 0, 3, (255, 255, 255), w, h, False)
