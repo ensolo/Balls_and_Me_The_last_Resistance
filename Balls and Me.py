@@ -39,6 +39,7 @@ class Game(object):
         self.bullets = []
         self.enemies = []
         self.items = []
+        self.enemy_bullets = []
         self.boss_spawn = 50
 
     def spawn_enemy(self):
@@ -134,9 +135,8 @@ class Game(object):
             screen.blit(background_game, (0, 0))
             if boss1.active:
                 boss1.draw()
-            if boss1.active:
-                for enemy_bullets in boss1.enemy_bullets:
-                    enemy_bullets.draw()
+            for enemy_bullets in game.enemy_bullets:
+                enemy_bullets.draw()
             for bullet in self.bullets:
                 bullet.draw()
             player.draw()
@@ -150,8 +150,8 @@ class Game(object):
             screen.blit(background_game, (0, 0))
             if boss1.active:
                 boss1.draw()
-                for enemy_bullet in boss1.enemy_bullets:
-                    enemy_bullet.draw()
+            for enemy_bullet in game.enemy_bullets:
+                enemy_bullet.draw()
             for bullet in self.bullets:
                 bullet.draw()
             player.draw()
@@ -169,8 +169,8 @@ class Game(object):
         player.update_cords()
         if boss1.active:
             boss1.update()
-            for enemy_bullet in boss1.enemy_bullets:
-                enemy_bullet.update()
+        for enemy_bullet in game.enemy_bullets:
+            enemy_bullet.update()
         for bullet in self.bullets:
             bullet.update_cords()
         for enemy in self.enemies:
@@ -185,7 +185,7 @@ class Game(object):
         self.clear_effects()
         self.boss_spawn = 50
         boss1.parts = []
-        boss1.enemy_bullets = []
+        game.enemy_bullets = []
         boss1.delete()
         player.x = int(w / 2)
         player.y = int(h / 2)
@@ -220,7 +220,7 @@ class Game(object):
         for enemy in self.enemies:
             if enemy.check_collision():
                 self.over_init()
-        for enemy_bullet in boss1.enemy_bullets:
+        for enemy_bullet in game.enemy_bullets:
             if enemy_bullet.check_collision():
                 self.over_init()
 
@@ -661,7 +661,6 @@ class Boss1(object):
         self.spirit = spirit
         self.active = False
         self.parts = []
-        self.enemy_bullets = []
         self.vector = Vector2(uniform(-1, 1), uniform(-1, 1))
 
     def spawn(self, num_parts, lives):
@@ -694,7 +693,7 @@ class Boss1(object):
                 vector_y = sin(radians(z))
                 vector = Vector2(vector_x, vector_y)
                 vector.normalize()
-                boss1.enemy_bullets.append(EnemyBullet(self.x, self.y, (0, 0, 255), vector))
+                game.enemy_bullets.append(EnemyBullet(self.x, self.y, (0, 0, 255), vector))
 
     def update(self):
         if time.timer_boss1_movement > 2500:
@@ -739,7 +738,7 @@ class Boss1Parts(object):
         if random() < 0.003:
             vector = Vector2(player.x - self.x, player.y - self.y)
             vector.normalize()
-            boss1.enemy_bullets.append(EnemyBullet(self.x, self.y, (0, 0, 255), vector))
+            game.enemy_bullets.append(EnemyBullet(self.x, self.y, (0, 0, 255), vector))
 
     def update(self):
         if self.check_collision(boss1):
@@ -806,7 +805,7 @@ class EnemyBullet(object):
 
     def delete(self):
         try:
-            boss1.enemy_bullets.remove(self)
+            game.enemy_bullets.remove(self)
         except:
             pass
 
