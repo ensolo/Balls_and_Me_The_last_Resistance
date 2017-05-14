@@ -715,7 +715,7 @@ class Boss1(object):
     def fire(self):
         if time.timer_boss1_fire > 1500 * int(((len(boss1.parts) + 1) ** 0.5)):
             time.timer_boss1_fire = 0
-            for z in range(0, 360, 36):
+            for z in range(0, 360, randint(20, 40)):
                 vector_x = cos(radians(z))
                 vector_y = sin(radians(z))
                 vector = Vector2(vector_x, vector_y)
