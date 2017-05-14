@@ -32,93 +32,34 @@ class Vector2(object):
             self.y /= magnitude
 
 
-class Player(object):
-    def __init__(self, x, y, radius, spirit, speed, firerate):
-        self.x = x
-        self.y = y
-        self.radius = radius
-        self.speed = speed
+class Game(object):
+    def __init__(self):
         self.score = 0
-        self.direction_x = None
-        self.direction_y = None
-        self.spirit = spirit
-        self.can_fire = True
-        self.invisible = False
+        self.highscore = 0
         self.bullets = []
         self.enemies = []
         self.items = []
-        self.highscore = None
-        self.firerate = firerate
         self.boss_spawn = 50
-        self.boost = 1000
-        self.boost_active = False
-
-    def __sub__(self, other):
-        return self.x - other.x, self.y - other.y
-
-    def get_pos(self):
-        return self.x, self.y
-
-    def draw(self):
-        x_spirit = self.x - self.spirit.get_width() / 2
-        y_spirit = self.y - self.spirit.get_height() / 2
-        screen.blit(self.spirit, (x_spirit, y_spirit))
-
-    def get_direction(self):
-        pressed_keys = pygame.key.get_pressed()
-        key_direction = Vector2(0, 0)
-        if pressed_keys[K_w] and player.y > player.radius:
-            key_direction.y = -1
-        if pressed_keys[K_s] and player.y < h - player.radius:
-            key_direction.y = 1
-        if pressed_keys[K_a] and player.x > player.radius:
-            key_direction.x = -1
-        if pressed_keys[K_d] and player.x < w - player.radius:
-            key_direction.x = 1
-        if not self.boost_active and pressed_keys[K_SPACE] and time.timer_boost > 5000:
-            time.countdown_boost = 0
-            player.items.append(Boost((153, 51, 155), -5))
-            self.boost_active = True
-        if self.boost_active and time.countdown_boost > 200:
-            time.timer_boost = 0
-            self.boost_active = False
-        if not self.can_fire:
-            angle = degrees(atan2(key_direction.x, key_direction.y))
-            self.spirit = pygame.transform.rotate(orig_me_spirit, angle + 230)
-        key_direction.normalize()
-        self.direction_x, self.direction_y = key_direction.get_cords()
-
-    def fire(self):
-        if self.can_fire:
-            sound_fire.stop()
-            sound_fire.play()
-            mouse_cords = pygame.mouse.get_pos()
-            mouse_direction.x = mouse_cords[0] - self.x
-            mouse_direction.y = mouse_cords[1] - self.y
-            mouse_direction.normalize()
-            player.bullets.append(Bullet((mouse_direction.get_cords())))
-            angle = degrees(atan2(mouse_cords[0] - self.x, mouse_cords[1] - self.y))
-            self.spirit = pygame.transform.rotate(orig_me_spirit, angle + 230)
 
     def spawn_enemy(self):
         for _ in range(randint(1, 1 + int((difficulty * time.time_total_seconds) ** 0.5))):
             x, y = self.get_spawn_cords(save_zone)
             self.enemies.append(Enemy(x, y, randint(10, 60),
-                                      randint(100, 200 + int((difficulty * time.time_total_seconds) ** 0.5) * 50),
-                                      randint(1, 1 + int((difficulty * time.time_total_seconds) ** 0.5))))
+                                        randint(100, 200 + int((difficulty * time.time_total_seconds) ** 0.5) * 50),
+                                        randint(1, 1 + int((difficulty * time.time_total_seconds) ** 0.5))))
 
     def get_spawn_cords(self, save_zone):
         lx = []
         ly = []
         l_result = []
-        if 71 < self.x - save_zone:
-            lx.append([randint(71, self.x - save_zone), self.x - save_zone - 71])
-        if self.x + save_zone < w - 71:
-            lx.append([randint(self.x + save_zone, w - 71), w - 71 - self.x - save_zone])
-        if 71 < self.y - save_zone:
-            ly.append([randint(71, self.y - save_zone), self.y - save_zone - 71])
-        if self.y + save_zone < h - 71:
-            ly.append([randint(self.y + save_zone, h - 71), h - 71 - self.y - save_zone])
+        if 71 < player.x - save_zone:
+            lx.append([randint(71, player.x - save_zone), player.x - save_zone - 71])
+        if player.x + save_zone < w - 71:
+            lx.append([randint(player.x + save_zone, w - 71), w - 71 - player.x - save_zone])
+        if 71 < player.y - save_zone:
+            ly.append([randint(71, player.y - save_zone), player.y - save_zone - 71])
+        if player.y + save_zone < h - 71:
+            ly.append([randint(player.y + save_zone, h - 71), h - 71 - player.y - save_zone])
         total = 0
         for x in lx:
             for y in ly:
@@ -136,14 +77,6 @@ class Player(object):
         if type == "rapid_fire":
             self.items.append(RapidFire((128, 0, 128), 5))
 
-    def update_cords(self):
-        if self.boost_active:
-            self.x += int(self.direction_x * (self.speed + self.boost) * time.time_passed_seconds)
-            self.y += int(self.direction_y * (self.speed + self.boost) * time.time_passed_seconds)
-        else:
-            self.x += int(self.direction_x * self.speed * time.time_passed_seconds)
-            self.y += int(self.direction_y * self.speed * time.time_passed_seconds)
-
     def give_highscore(self):
         score_file = open("Highscore.txt", "a+")
         score_file.close()
@@ -160,11 +93,11 @@ class Player(object):
         score_file.close()
 
     def create_objects(self):
-        if player.score >= player.boss_spawn and not boss1.active:
+        if self.score >= self.boss_spawn and not boss1.active:
             if time.timer_boss1_delay > 5000:
                 time.timer_boss1_delay = 0
-                player.bullets = []
-            boss1.spawn(int(player.boss_spawn / 5), int(player.boss_spawn / 5))
+                self.bullets = []
+            boss1.spawn(int(self.boss_spawn / 5), int(self.boss_spawn / 5))
         if boss1.active:
             boss1.fire()
             for part in boss1.parts:
@@ -174,17 +107,17 @@ class Player(object):
             player.fire()
         if time.timer_enemy > 1400 and not boss1.active and time.timer_boss1_delay > 5000:
             time.timer_enemy = 0
-            player.spawn_enemy()
+            self.spawn_enemy()
         if time.timer_item > 20000 and not boss1.active and time.timer_boss1_delay > 5000:
             time.timer_item = 0
             number = randint(1, 2)
             if number == 1:
-                player.spawn_item("immortal")
+                self.spawn_item("immortal")
             elif number == 2:
-                player.spawn_item("rapid_fire")
+                self.spawn_item("rapid_fire")
 
     def delete_objects(self):
-        for bullet in player.bullets:
+        for bullet in self.bullets:
             for enemy in self.enemies:
                 bullet.collision(enemy, "enemy")
             if boss1.active:
@@ -204,9 +137,9 @@ class Player(object):
             if boss1.active:
                 for enemy_bullets in boss1.enemy_bullets:
                     enemy_bullets.draw()
-            for bullet in player.bullets:
+            for bullet in self.bullets:
                 bullet.draw()
-            self.draw()
+            player.draw()
             for enemy in self.enemies:
                 enemy.draw()
             for item in self.items:
@@ -219,7 +152,7 @@ class Player(object):
                 boss1.draw()
                 for enemy_bullet in boss1.enemy_bullets:
                     enemy_bullet.draw()
-            for bullet in player.bullets:
+            for bullet in self.bullets:
                 bullet.draw()
             player.draw()
             for enemy2 in self.enemies:
@@ -233,12 +166,12 @@ class Player(object):
 
     def update_all(self):
         time.update_time()
-        self.update_cords()
+        player.update_cords()
         if boss1.active:
             boss1.update()
             for enemy_bullet in boss1.enemy_bullets:
                 enemy_bullet.update()
-        for bullet in player.bullets:
+        for bullet in self.bullets:
             bullet.update_cords()
         for enemy in self.enemies:
             enemy.update_cords()
@@ -256,7 +189,7 @@ class Player(object):
         boss1.delete()
         player.x = int(w / 2)
         player.y = int(h / 2)
-        player.score = 0
+        self.score = 0
         time.timer_boss1_delay = 0
         time.time_total_seconds = 0
         time.restart()
@@ -284,7 +217,7 @@ class Player(object):
             pygame.display.update()
 
     def check_over(self):
-        for enemy in player.enemies:
+        for enemy in self.enemies:
             if enemy.check_collision():
                 self.over_init()
         for enemy_bullet in boss1.enemy_bullets:
@@ -292,16 +225,80 @@ class Player(object):
                 self.over_init()
 
     def over_init(self):
-        player.give_highscore()
-        player.over_loop()
-        player.restart()
+        self.give_highscore()
+        self.over_loop()
+        self.restart()
 
-    def items_use_index(self, item):
-        result = []
-        for element in self.items:
-            if element.use:
-                result.append(element)
-        return result.index(item)
+
+class Player(object):
+    def __init__(self, x, y, radius, spirit, speed, firerate):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.speed = speed
+        self.direction_x = None
+        self.direction_y = None
+        self.spirit = spirit
+        self.can_fire = True
+        self.invisible = False
+        self.firerate = firerate
+        self.boost = 1000
+        self.boost_active = False
+
+    def __sub__(self, other):
+        return self.x - other.x, self.y - other.y
+
+    def get_pos(self):
+        return self.x, self.y
+
+    def draw(self):
+        x_spirit = self.x - self.spirit.get_width() / 2
+        y_spirit = self.y - self.spirit.get_height() / 2
+        screen.blit(self.spirit, (x_spirit, y_spirit))
+
+    def get_direction(self):
+        pressed_keys = pygame.key.get_pressed()
+        key_direction = Vector2(0, 0)
+        if pressed_keys[K_w] and player.y > player.radius:
+            key_direction.y = -1
+        if pressed_keys[K_s] and player.y < h - player.radius:
+            key_direction.y = 1
+        if pressed_keys[K_a] and player.x > player.radius:
+            key_direction.x = -1
+        if pressed_keys[K_d] and player.x < w - player.radius:
+            key_direction.x = 1
+        if not self.boost_active and pressed_keys[K_SPACE] and time.timer_boost > 5000:
+            time.countdown_boost = 0
+            game.items.append(Boost((153, 51, 155), -5))
+            self.boost_active = True
+        if self.boost_active and time.countdown_boost > 200:
+            time.timer_boost = 0
+            self.boost_active = False
+        if not self.can_fire:
+            angle = degrees(atan2(key_direction.x, key_direction.y))
+            self.spirit = pygame.transform.rotate(orig_me_spirit, angle + 230)
+        key_direction.normalize()
+        self.direction_x, self.direction_y = key_direction.get_cords()
+
+    def fire(self):
+        if self.can_fire:
+            sound_fire.stop()
+            sound_fire.play()
+            mouse_cords = pygame.mouse.get_pos()
+            mouse_direction.x = mouse_cords[0] - self.x
+            mouse_direction.y = mouse_cords[1] - self.y
+            mouse_direction.normalize()
+            game.bullets.append(Bullet((mouse_direction.get_cords())))
+            angle = degrees(atan2(mouse_cords[0] - self.x, mouse_cords[1] - self.y))
+            self.spirit = pygame.transform.rotate(orig_me_spirit, angle + 230)
+
+    def update_cords(self):
+        if self.boost_active:
+            self.x += int(self.direction_x * (self.speed + self.boost) * time.time_passed_seconds)
+            self.y += int(self.direction_y * (self.speed + self.boost) * time.time_passed_seconds)
+        else:
+            self.x += int(self.direction_x * self.speed * time.time_passed_seconds)
+            self.y += int(self.direction_y * self.speed * time.time_passed_seconds)
 
 
 class Enemy(object):
@@ -333,14 +330,14 @@ class Enemy(object):
             if distance <= self.radius + player.radius:
                 if not player.invisible:
                     return True
-                player.score += 1
+                game.score += 1
                 self.delete()
             return False
         except:
             return False
 
     def delete(self):
-        player.enemies.remove(self)
+        game.enemies.remove(self)
 
 
 class Bullet(object):
@@ -365,7 +362,7 @@ class Bullet(object):
                 enemy.lives -= 1
                 if enemy.lives == 0:
                     enemy.delete()
-                    player.score += 1
+                    game.score += 1
                 self.delete()
         if type == "part":
             vector = Vector2(self.x - enemy.x, self.y - enemy.y)
@@ -387,7 +384,7 @@ class Bullet(object):
 
     def delete(self):
         try:
-            player.bullets.remove(self)
+            game.bullets.remove(self)
         except:
             pass
 
@@ -555,7 +552,7 @@ class Item(object):
     def draw(self):
         self.font.make_surface(self.letter)
         if self.use:
-            index = player.items_use_index(self)
+            index = self.items_use_index(self)
             x = w - self.radius - index * (self.radius + 10) * 2
             y = self.radius
             pygame.draw.circle(screen, self.spirit, (x, y), self.radius)
@@ -583,9 +580,16 @@ class Item(object):
             int_piece = str(int(duration[1]))
             return int_piece + "." + dez_piece
 
+    def items_use_index(self, item):
+        result = []
+        for element in game.items:
+            if element.use:
+                result.append(element)
+        return result.index(item)
+
     def delete(self):
         try:
-            player.items.remove(self)
+            game.items.remove(self)
         except:
             pass
 
@@ -665,12 +669,12 @@ class Boss1(object):
         self.lives = lives
         self.total_lives = lives
         time.timer_boss1_fire = 0
-        player.items = []
-        player.enemies = []
-        player.clear_effects()
+        game.items = []
+        game.enemies = []
+        game.clear_effects()
         if time.timer_boss1_delay > 3000:
-            self.x, self.y = player.get_spawn_cords(300)
-            player.boss_spawn += 75
+            self.x, self.y = game.get_spawn_cords(300)
+            game.boss_spawn += 75
             self.active = True
             for _ in range(num_parts):
                 self.parts.append(Boss1Parts())
@@ -708,7 +712,8 @@ class Boss1(object):
             part.update()
 
     def delete(self):
-        player.score += 25
+        game.score += 25
+        time.timer_boss1_delay = 0
         self.active = False
 
 
@@ -844,6 +849,7 @@ pygame.mixer.music.set_volume(0.5)
 sound_fire = pygame.mixer.Sound(fire_sound_filename)
 sound_fire.set_volume(0.5)
 
+game = Game()
 player = Player(int(w / 2), int(h / 2), me_radius, orig_me_spirit, me_speed, firerate)
 boss1 = Boss1((255, 255, 0))
 time = Time()
@@ -864,13 +870,13 @@ menu = Menu()
 pygame.mouse.set_visible(False)
 
 pygame.mixer.music.play(-1)
-player.start_loop()
+game.start_loop()
 while True:
     menu.menu_loop()
     player.get_direction()
-    player.create_objects()
-    player.delete_objects()
-    player.draw_all("game")
-    player.update_all()
-    player.check_over()
+    game.create_objects()
+    game.delete_objects()
+    game.draw_all("game")
+    game.update_all()
+    game.check_over()
     pygame.display.update()
