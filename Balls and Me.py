@@ -3,6 +3,7 @@ from pygame.locals import *
 from sys import exit
 from random import *
 from math import *
+from linecache import getline
 
 
 class Vector2(object):
@@ -41,13 +42,20 @@ class Game(object):
         self.items = []
         self.enemy_bullets = []
         self.boss_spawn = 50
+        self.difficulty = self.get_difficulty()
+
+    def get_difficulty(self):
+        difficulty_file = open("Difficulty.txt", "r+")
+        difficulty = float(difficulty_file.read())
+        difficulty_file.close()
+        return difficulty
 
     def spawn_enemy(self):
-        for _ in range(randint(1, 1 + int((difficulty * time.time_total_seconds) ** 0.5))):
+        for _ in range(randint(1, 1 + int((self.difficulty * time.time_total_seconds) ** 0.5))):
             x, y = self.get_spawn_cords(save_zone)
             self.enemies.append(Enemy(x, y, randint(10, 60),
-                                        randint(100, 200 + int((difficulty * time.time_total_seconds) ** 0.5) * 50),
-                                        randint(1, 1 + int((difficulty * time.time_total_seconds) ** 0.5))))
+                                        randint(100, 200 + int((self.difficulty * time.time_total_seconds) ** 0.5) * 50),
+                                        randint(1, 1 + int((self.difficulty * time.time_total_seconds) ** 0.5))))
 
     def get_spawn_cords(self, save_zone):
         lx = []
@@ -81,19 +89,17 @@ class Game(object):
             self.items.append(Freeze((128, 0, 128), 10))
 
     def give_highscore(self):
-        score_file = open("Highscore.txt", "a+")
-        score_file.close()
-        score_file = open("Highscore.txt", "r+")
-        highscore = score_file.read()
+        highscore_file = open("Highscore.txt", "r+")
+        highscore = highscore_file.read()
         if len(highscore) == 0:
             self.highscore = 0
         else:
             self.highscore = int(highscore)
         if self.highscore < self.score:
-            score_file.seek(0, 0)
-            score_file.write(repr(self.score))
+            highscore_file.seek(0, 0)
+            highscore_file.write(repr(self.score))
             self.highscore = self.score
-        score_file.close()
+        highscore_file.close()
 
     def create_objects(self):
         if self.score >= self.boss_spawn and not boss1.active:
@@ -455,6 +461,9 @@ class Font(object):
         self.center_w = center_w
         self.center_h = center_h
 
+    def get_cords(self):
+        return self.x, self.y
+
     def make_surface(self, text, statement=True):
         if self.font == 1:
             self.surface = self.font_big.render(text, statement, self.color)
@@ -528,22 +537,27 @@ class Menu(object):
 
 
 class Switch(object):
-    def __init__(self, center_x, center_y):
+    def __init__(self, center_x, center_y, type):
         self.width = 400
         self.height = 20
-        self.x_rect = center_x - self.width / 2
-        self.y_rect = center_y - self.height / 2
-        self.x_cir = center_x
+        self.type = type
+        self.x_rect = int(center_x - self.width / 2)
+        self.y_rect = int(center_y - self.height / 2)
+        self.x_cir = self.get_x()
         self.y_cir = center_y
         self.radius = 20
         self.spirit_rect = (255, 255, 255)
         self.spirit_cir = (255, 0, 0)
         self.use_last_frame = False
         self.percent = 0
+        self.font_percent = Font(self.x_rect + 270, self.y_rect, 3, (255, 255, 255), self.width, self.height)
+        self.font_type = Font(self.x_rect - 320, self.y_rect, 3, (255, 255, 255), self.width, self.height)
 
     def draw(self):
         pygame.draw.rect(screen, self.spirit_rect, (self.x_rect, self.y_rect, self.width, self.height))
         pygame.draw.circle(screen, self.spirit_cir, (self.x_cir, self.y_cir), self.radius)
+        self.font_percent.draw(str(int(self.percent)))
+        self.font_type.draw(self.type)
 
     def update(self):
         if pygame.mouse.get_pressed()[0]:
@@ -551,9 +565,9 @@ class Switch(object):
             if self.use_last_frame:
                 if self.x_rect <= self.x_cir <= int(self.x_rect + self.width):
                     if self.x_rect <= x <= int(self.x_rect + self.width):
-                        self.x_cir = int(x)
+                        self.x_cir = x
                 elif self.x_rect > self.x_cir:
-                    self.x_cir = int(self.x_rect)
+                    self.x_cir = self.x_rect
                 else:
                     self.x_cir = int(self.x_rect + self.width)
             elif self.x_rect <= x <= int(self.x_rect + self.width) \
@@ -562,7 +576,19 @@ class Switch(object):
                 self.use_last_frame = True
         else:
             self.use_last_frame = False
-        self.percent = self.x_cir / self.width
+        if self.type == "Difficulty":
+            self.percent = int((self.x_cir - self.x_rect) / self.width * 9.9) + 1
+            game.difficulty = self.percent / 10
+            difficulty_file = open("Difficulty.txt", "r+")
+            difficulty_file.write(str(game.difficulty))
+            difficulty_file.close()
+        if self.type == "Volume":
+            self.percent = (self.x_cir - self.x_rect) / self.width * 100
+
+    def get_x(self):
+        if self.type == "Difficulty":
+            return int(self.width * game.difficulty + self.x_rect)
+
 
 
 class Time(object):
@@ -904,7 +930,6 @@ pygame.init()
 
 w, h = 1920, 1080
 firerate = 270
-difficulty = 0.1
 w_button = 200
 h_button = 100
 me_radius = 35
@@ -948,7 +973,7 @@ button_exit = Button("Exit", (w - w_button) / 2, h / 2 + 3 * h_button, w_button,
 button_return_to_game = Button("Back to Game", (w - w_button) / 2, h / 2 - 3 * h_button, w_button, h_button, 3)
 button_setting = Button("Settings", (w - w_button) / 2, h / 2 - 0 * h_button, w_button, h_button, 3)
 button_return = Button("Back", (w - w_button) / 2, h / 2 + 3 * h_button, w_button, h_button, 3)
-switch_difficulty = Switch(int(w / 2), int(h / 2))
+switch_difficulty = Switch(int(w / 2), int(h / 2), "Difficulty")
 start_font = Font(0, 0, 2, (255, 255, 255))
 start_font.make_surface("Press Space to Start the Game")
 score_font = Font(0, 0, 3, (255, 255, 255), w, h, False)
