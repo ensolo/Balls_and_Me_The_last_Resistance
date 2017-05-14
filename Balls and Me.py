@@ -258,6 +258,7 @@ class Player(object):
         player.y = int(h / 2)
         player.score = 0
         time.timer_boss1_delay = 0
+        time.time_total_seconds = 0
         time.restart()
 
     def clear_effects(self):
