@@ -105,7 +105,7 @@ class Game(object):
             boss1.fire()
             for part in boss1.parts:
                 part.fire()
-        if pygame.mouse.get_pressed()[0] and time.timer_firerate > player.firerate:
+        if pygame.mouse.get_pressed()[0] and time.timer_firerate > player.firerate and time.timer_mouse > 500:
             time.timer_firerate = 0
             player.fire()
         if time.timer_enemy > 1400 and not boss1.active and time.timer_boss1_delay > 5000:
@@ -416,7 +416,7 @@ class Button(object):
         self.y = y
         self.width = width
         self.height = height
-        self.font = Font(x, y, 3, None, width, height)
+        self.font = Font(x, y, font, None, width, height)
 
     def hover(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -478,9 +478,6 @@ class Font(object):
 
 
 class Menu(object):
-    def __init__(self):
-        pass
-
     def menu_loop(self):
         for event in pygame.event.get():
             if event.type == KEYDOWN:
@@ -492,16 +489,40 @@ class Menu(object):
                                 if event2.key == K_ESCAPE:
                                     esc_pressed = True
                                     break
-                        if button_exit.check_pressed():
+                        if button_exit.check_pressed() and time.timer_mouse > 500:
                             exit()
-                        if button_return.check_pressed() or esc_pressed:
+                        if button_return_to_game.check_pressed() or esc_pressed and time.timer_mouse > 500:
+                            time.timer_mouse = 0
                             break
+                        if button_setting.check_pressed() and time.timer_mouse > 500:
+                            time.timer_mouse = 0
+                            self.setting_loop()
                         screen.blit(background, (0, 0))
                         button_exit.draw()
-                        button_return.draw()
+                        button_return_to_game.draw()
+                        button_setting.draw()
                         cursor.draw()
                         pygame.display.update()
                         time.time_passed = clock.tick(60)
+                        time.timer_mouse += time.time_passed
+
+    def setting_loop(self):
+        while True:
+            esc_pressed = False
+            for event in pygame.event.get():
+                if event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        esc_pressed = True
+                        break
+            if button_return.check_pressed() or esc_pressed and time.timer_mouse > 500:
+                time.timer_mouse = 0
+                break
+            screen.blit(background, (0, 0))
+            button_return.draw()
+            cursor.draw()
+            pygame.display.update()
+            time.time_passed = clock.tick(60)
+            time.timer_mouse += time.time_passed
 
 
 class Time(object):
@@ -516,6 +537,7 @@ class Time(object):
         self.countdown_boost = 0
         self.timer_boost = 0
         self.timer_boss1_delay = 0
+        self.timer_mouse = 0
         self.time_total_seconds = 0
 
     def update_time(self):
@@ -528,6 +550,7 @@ class Time(object):
         self.countdown_boost += self.time_passed
         self.timer_boost += self.time_passed
         self.timer_boss1_delay += self.time_passed
+        self.timer_mouse += self.time_passed
         self.time_passed_seconds = self.time_passed / 1000.0
         if not boss1.active:
             self.time_total_seconds += self.time_passed_seconds
@@ -881,8 +904,10 @@ boss1 = Boss1((255, 255, 0))
 time = Time()
 cursor = Cursor()
 mouse_direction = Vector2(0, 0)
-button_exit = Button("Exit", (w - w_button) / 2, h / 2 + 2 * h_button, w_button, h_button, 3)
-button_return = Button("Back to Game", (w - w_button) / 2, h / 2 - 2 * h_button, w_button, h_button, 3)
+button_exit = Button("Exit", (w - w_button) / 2, h / 2 + 3 * h_button, w_button, h_button, 3)
+button_return_to_game = Button("Back to Game", (w - w_button) / 2, h / 2 - 3 * h_button, w_button, h_button, 3)
+button_setting = Button("Settings", (w - w_button) / 2, h / 2 - 0 * h_button, w_button, h_button, 3)
+button_return = Button("Back", (w - w_button) / 2, h / 2 + 3 * h_button, w_button, h_button, 3)
 start_font = Font(0, 0, 2, (255, 255, 255))
 start_font.make_surface("Press Space to Start the Game")
 score_font = Font(0, 0, 3, (255, 255, 255), w, h, False)
