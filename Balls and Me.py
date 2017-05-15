@@ -261,6 +261,7 @@ class Player(object):
         self.firerate = firerate
         self.boost = 1000
         self.boost_active = False
+        self.angle = 0
 
     def __sub__(self, other):
         return self.x - other.x, self.y - other.y
@@ -292,8 +293,9 @@ class Player(object):
             time.timer_boost = 0
             self.boost_active = False
         if not self.can_fire:
-            angle = degrees(atan2(key_direction.x, key_direction.y))
-            self.spirit = pygame.transform.rotate(orig_me_spirit, angle + 230)
+            sound_immortal.play(0, 5000)
+            self.angle += 20
+            self.spirit = pygame.transform.rotate(orig_me_spirit, self.angle + 230)
         key_direction.normalize()
         self.direction_x, self.direction_y = key_direction.get_cords()
 
@@ -306,8 +308,8 @@ class Player(object):
             mouse_direction.y = mouse_cords[1] - self.y
             mouse_direction.normalize()
             game.bullets.append(Bullet((mouse_direction.get_cords())))
-            angle = degrees(atan2(mouse_cords[0] - self.x, mouse_cords[1] - self.y))
-            self.spirit = pygame.transform.rotate(orig_me_spirit, angle + 230)
+            self.angle = degrees(atan2(mouse_cords[0] - self.x, mouse_cords[1] - self.y))
+            self.spirit = pygame.transform.rotate(orig_me_spirit, self.angle + 230)
 
     def update_cords(self):
         if self.boost_active:
@@ -603,6 +605,7 @@ class Switch(object):
             volume_file.close()
             pygame.mixer.music.set_volume(game.volume)
             sound_fire.set_volume(game.volume)
+            sound_immortal.set_volume(game.volume / 10)
 
 
     def get_x(self):
@@ -1002,10 +1005,13 @@ menu = Menu()
 
 music_background_filename = "music_background.mp3"
 fire_sound_filename = "fire_sound.ogg"
+immortal_sound_file = "Immortal_sound.ogg"
 pygame.mixer.music.load(music_background_filename)
 pygame.mixer.music.set_volume(game.volume)
 sound_fire = pygame.mixer.Sound(fire_sound_filename)
 sound_fire.set_volume(game.volume)
+sound_immortal = pygame.mixer.Sound(immortal_sound_file)
+sound_immortal.set_volume(game.volume / 10)
 
 pygame.mouse.set_visible(False)
 pygame.mixer.music.play(-1)
