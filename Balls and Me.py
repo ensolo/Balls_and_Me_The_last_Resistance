@@ -262,6 +262,7 @@ class Player(object):
         self.boost = 1000
         self.boost_active = False
         self.angle = 0
+        self.sound_play = False
 
     def __sub__(self, other):
         return self.x - other.x, self.y - other.y
@@ -293,7 +294,9 @@ class Player(object):
             time.timer_boost = 0
             self.boost_active = False
         if not self.can_fire:
-            sound_immortal.play(0, 5000)
+            if not self.sound_play:
+                sound_immortal.play(0, 5000, 100)
+                self.sound_play = True
             self.angle += 20
             self.spirit = pygame.transform.rotate(orig_me_spirit, self.angle + 230)
         key_direction.normalize()
@@ -301,8 +304,8 @@ class Player(object):
 
     def fire(self):
         if self.can_fire:
-            sound_fire.stop()
-            sound_fire.play()
+            channel_fire.stop()
+            channel_fire.play(sound_fire)
             mouse_cords = pygame.mouse.get_pos()
             mouse_direction.x = mouse_cords[0] - self.x
             mouse_direction.y = mouse_cords[1] - self.y
@@ -605,7 +608,7 @@ class Switch(object):
             volume_file.close()
             pygame.mixer.music.set_volume(game.volume)
             sound_fire.set_volume(game.volume)
-            sound_immortal.set_volume(game.volume / 10)
+            sound_immortal.set_volume(game.volume)
 
 
     def get_x(self):
@@ -757,6 +760,7 @@ class Immortal(Item):
             player.speed = me_speed
             player.can_fire = True
             player.invisible = False
+            pygame.mixer.music.unpause()
             self.delete()
         if self.use and self.duration > 0:
             self.duration -= time.time_passed_seconds
@@ -765,6 +769,8 @@ class Immortal(Item):
             player.invisible = True
         if not self.use and self.check_pickup():
             self.use = True
+            player.sound_play = False
+            pygame.mixer.music.pause()
         if self.despawn <= 0 and not self.use:
             self.delete()
         else:
@@ -1003,6 +1009,8 @@ restart_font.make_surface("Press Space to restart the Game")
 highscore_font = Font(0, -game_over_font.surface.get_height(), 2, (255, 255, 255))
 menu = Menu()
 
+channel_fire = pygame.mixer.Channel(1)
+channel_immortal = pygame.mixer.Channel(2)
 music_background_filename = "music_background.mp3"
 fire_sound_filename = "fire_sound.ogg"
 immortal_sound_file = "Immortal_sound.ogg"
@@ -1011,7 +1019,7 @@ pygame.mixer.music.set_volume(game.volume)
 sound_fire = pygame.mixer.Sound(fire_sound_filename)
 sound_fire.set_volume(game.volume)
 sound_immortal = pygame.mixer.Sound(immortal_sound_file)
-sound_immortal.set_volume(game.volume / 10)
+sound_immortal.set_volume(game.volume)
 
 pygame.mouse.set_visible(False)
 pygame.mixer.music.play(-1)
