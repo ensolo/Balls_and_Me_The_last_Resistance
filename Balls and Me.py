@@ -43,12 +43,19 @@ class Game(object):
         self.enemy_bullets = []
         self.boss_spawn = 50
         self.difficulty = self.get_difficulty()
+        self.volume = self.get_volume()
 
     def get_difficulty(self):
         difficulty_file = open("Difficulty.txt", "r+")
         difficulty = float(difficulty_file.read())
         difficulty_file.close()
         return difficulty
+
+    def get_volume(self):
+        volume_file = open("Volume.txt", "r+")
+        volume = float(volume_file.read())
+        volume_file.close()
+        return volume
 
     def spawn_enemy(self):
         for _ in range(randint(1, 1 + int((self.difficulty * time.time_total_seconds) ** 0.5))):
@@ -529,9 +536,11 @@ class Menu(object):
             screen.blit(background, (0, 0))
             button_return.draw()
             switch_difficulty.draw()
+            switch_volume.draw()
             cursor.draw()
             pygame.display.update()
             switch_difficulty.update()
+            switch_volume.update()
             time.time_passed = clock.tick(60)
             time.timer_mouse += time.time_passed
 
@@ -556,8 +565,12 @@ class Switch(object):
     def draw(self):
         pygame.draw.rect(screen, self.spirit_rect, (self.x_rect, self.y_rect, self.width, self.height))
         pygame.draw.circle(screen, self.spirit_cir, (self.x_cir, self.y_cir), self.radius)
-        self.font_percent.draw(str(int(self.percent)))
-        self.font_type.draw(self.type)
+        if self.type == "Difficulty":
+            self.font_percent.draw(str(int(self.percent)))
+            self.font_type.draw(self.type)
+        if self.type == "Volume":
+            self.font_percent.draw(str(int(self.percent)) + "%")
+            self.font_type.draw(self.type)
 
     def update(self):
         if pygame.mouse.get_pressed()[0]:
@@ -584,10 +597,19 @@ class Switch(object):
             difficulty_file.close()
         if self.type == "Volume":
             self.percent = (self.x_cir - self.x_rect) / self.width * 100
+            game.volume = self.percent / 100
+            volume_file = open("Volume.txt", "r+")
+            volume_file.write(str(game.volume))
+            volume_file.close()
+            pygame.mixer.music.set_volume(game.volume)
+            sound_fire.set_volume(game.volume)
+
 
     def get_x(self):
         if self.type == "Difficulty":
             return int(self.width * game.difficulty + self.x_rect)
+        if self.type == "Volume":
+            return int(self.width * game.volume + self.x_rect)
 
 
 
@@ -956,13 +978,6 @@ background_start = pygame.transform.scale(background_start, (w, h))
 background_game = pygame.transform.scale(background_game, (w, h))
 cursor_spirit = pygame.transform.scale(cursor_spirit, (60, 60))
 
-music_background_filename = "music_background.mp3"
-fire_sound_filename = "fire_sound.ogg"
-pygame.mixer.music.load(music_background_filename)
-pygame.mixer.music.set_volume(0.5)
-sound_fire = pygame.mixer.Sound(fire_sound_filename)
-sound_fire.set_volume(0.5)
-
 game = Game()
 player = Player(int(w / 2), int(h / 2), me_radius, orig_me_spirit, me_speed, firerate)
 boss1 = Boss1((255, 255, 0))
@@ -974,6 +989,7 @@ button_return_to_game = Button("Back to Game", (w - w_button) / 2, h / 2 - 3 * h
 button_setting = Button("Settings", (w - w_button) / 2, h / 2 - 0 * h_button, w_button, h_button, 3)
 button_return = Button("Back", (w - w_button) / 2, h / 2 + 3 * h_button, w_button, h_button, 3)
 switch_difficulty = Switch(int(w / 2), int(h / 2), "Difficulty")
+switch_volume = Switch(int(w / 2), int(h / 3), "Volume")
 start_font = Font(0, 0, 2, (255, 255, 255))
 start_font.make_surface("Press Space to Start the Game")
 score_font = Font(0, 0, 3, (255, 255, 255), w, h, False)
@@ -984,9 +1000,16 @@ restart_font.make_surface("Press Space to restart the Game")
 highscore_font = Font(0, -game_over_font.surface.get_height(), 2, (255, 255, 255))
 menu = Menu()
 
-pygame.mouse.set_visible(False)
+music_background_filename = "music_background.mp3"
+fire_sound_filename = "fire_sound.ogg"
+pygame.mixer.music.load(music_background_filename)
+pygame.mixer.music.set_volume(game.volume)
+sound_fire = pygame.mixer.Sound(fire_sound_filename)
+sound_fire.set_volume(game.volume)
 
+pygame.mouse.set_visible(False)
 pygame.mixer.music.play(-1)
+
 game.start_loop()
 while True:
     menu.menu_loop()
